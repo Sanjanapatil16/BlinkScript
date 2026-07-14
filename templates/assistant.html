@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlinkScript Assistant</title>
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-grad-start: #080c18;
+            --bg-grad-end: #03050b;
+            --panel-bg: rgba(18, 26, 47, 0.65);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --primary-glow: rgba(59, 130, 246, 0.5);
+            --accent-glow: rgba(139, 92, 246, 0.5);
+            
+            --primary: #3b82f6;
+            --accent: #8b5cf6;
+            --green: #10b981;
+            --red: #ef4444;
+            --orange: #f59e0b;
+            
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --font-family: 'Plus Jakarta Sans', sans-serif;
+            --font-display: 'Outfit', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: radial-gradient(circle at 50% 50%, #0d162d 0%, var(--bg-grad-end) 100%);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism Container */
+        .assistant-container {
+            width: 100%;
+            max-width: 1100px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 
+                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            display: grid;
+            grid-template-columns: 1.8fr 1.2fr;
+            gap: 20px;
+            padding: 24px;
+            height: 700px;
+            position: relative;
+        }
+
+        /* Left Interaction Area */
+        .interaction-area {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        /* Header / Status Bar */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        .brand-title {
+            font-family: var(--font-display);
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-title span.badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: rgba(96, 165, 250, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            text-transform: uppercase;
+            font-family: var(--font-family);
+            font-weight: 700;
+        }
+
+        .connection-status {
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--green);
+            box-shadow: 0 0 8px var(--green);
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+
+        /* Screen Display Node */
+        .screen-display {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            min-height: 180px;
+            position: relative;
+        }
+
+        .mode-indicator {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 8px;
+            background: rgba(139, 92, 246, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .question-text {
+            font-family: var(--font-display);
+            font-size: 26px;
+            font-weight: 700;
+            line-height: 1.4;
+            max-width: 90%;
+            margin: 0;
+            color: var(--text-main);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Message Buffer Display (For typing) */
+        .input-buffer-container {
+            width: 95%;
+            margin-top: 15px;
+            background: rgba(7, 10, 20, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px 16px;
+            min-height: 54px;
+            display: none; /* Shown dynamically */
+            text-align: left;
+            position: relative;
+        }
+
+        .input-buffer-text {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--green);
+            word-wrap: break-word;
+            margin: 0;
+            padding-right: 20px;
+        }
+
+        .input-buffer-text::after {
+            content: '|';
+            color: var(--green);
+            animation: blink-cursor 0.8s infinite;
+        }
+
+        @keyframes blink-cursor {
+            50% { opacity: 0; }
+        }
+
+        /* Word Suggestions Row */
+        .suggestions-row {
+            display: none; /* Shown dynamically */
+            width: 95%;
+            margin-top: 8px;
+            gap: 10px;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .suggestion-item {
+            font-size: 13px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        /* 2x2 Grid of Option Cards */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            width: 100%;
+            margin-top: auto;
+        }
+
+        .option-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            min-height: 80px;
+        }
+
+        .option-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .option-number {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-display);
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-muted);
+            transition: all 0.25s;
+        }
+
+        .option-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-main);
+            line-height: 1.3;
+            transition: all 0.25s;
+        }
+
+        /* Hover States for Manual Testing */
+        .option-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* Activated/Blinking Visual Feedback State */
+        .option-card.activated {
+            background: rgba(59, 130, 246, 0.12) !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 15px var(--primary-glow) !important;
+            transform: scale(0.97);
+            animation: pulse-border 0.5s ease-out;
+        }
+
+        .option-card.activated .option-number {
+            background: var(--primary) !important;
+            border-color: #60a5fa !important;
+            color: white !important;
+        }
+
+        .option-card.activated .option-label {
+            color: white !important;
+        }
+
+        /* Emergency Option Highlight */
+        .option-card.emergency-btn {
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+        .option-card.emergency-btn .option-number {
+            color: #f87171;
+            background: rgba(239, 68, 68, 0.05);
+            border-color: rgba(239, 68, 68, 0.15);
+        }
+        .option-card.emergency-btn.activated {
+            background: rgba(239, 68, 68, 0.15) !important;
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5) !important;
+        }
+        .option-card.emergency-btn.activated .option-number {
+            background: #ef4444 !important;
+            border-color: #f87171 !important;
+        }
+
+        /* Right Sidebar Panel */
+        .sidebar-panel {
+            background: rgba(7, 10, 20, 0.4);
+            border-left: 1px solid var(--panel-border);
+            border-radius: 0 16px 16px 0;
+            padding: 10px 0 10px 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .sidebar-title {
+            font-family: var(--font-display);
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 0 12px 0;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-right: 20px;
+        }
+
+        .voice-settings {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .voice-checkbox {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .voice-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Conversational Dialogue Log */
+        .dialogue-log {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 12px;
+        }
+
+        /* Scrollbar styles */
+        .dialogue-log::-webkit-scrollbar {
+            width: 5px;
+        }
+        .dialogue-log::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .dialogue-log::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+        }
+
+        .log-bubble {
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.4;
+            max-width: 85%;
+            animation: message-pop 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            word-wrap: break-word;
+        }
+
+        @keyframes message-pop {
+            from { opacity: 0; transform: translateY(8px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .log-bubble.bot {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            align-self: flex-start;
+            border-left: 3px solid var(--accent);
+        }
+
+        .log-bubble.user {
+            background: rgba(59, 130, 246, 0.12);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            align-self: flex-end;
+            border-right: 3px solid var(--green);
+            color: #d1fae5;
+        }
+
+        .log-bubble.system {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            align-self: center;
+            text-align: center;
+            font-weight: 700;
+            color: #fca5a5;
+            max-width: 95%;
+        }
+
+        .log-sender {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .log-sender.bot { color: #a78bfa; }
+        .log-sender.user { color: #34d399; }
+        .log-sender.system { color: #ef4444; }
+
+        /* Blink HUD Overlay */
+        .blink-hud {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #93c5fd;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .hud-icon {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            box-shadow: 0 0 8px var(--primary);
+            animation: pulse-hud 1s infinite alternate;
+        }
+
+        @keyframes pulse-hud {
+            from { opacity: 0.5; }
+            to { opacity: 1; }
+        }
+
+        /* Keyboard Buffer Indicator overlay on standard layout */
+        .keyboard-meta {
+            display: none;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        /* Key Highlights in Grid */
+        .option-card.empty-option {
+            opacity: 0.3;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        @keyframes pulse-border {
+            0% { border-color: rgba(59, 130, 246, 0.5); }
+            50% { border-color: rgba(59, 130, 246, 1); }
+            100% { border-color: var(--panel-border); }
+        }
+
+        /* Responsiveness */
+        @media (max-width: 900px) {
+            .assistant-container {
+                grid-template-columns: 1fr;
+                height: auto;
+                min-height: 800px;
+            }
+            .sidebar-panel {
+                border-left: none;
+                border-top: 1px solid var(--panel-border);
+                padding: 20px 0 0 0;
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="assistant-container">
+        
+        <!-- Left interaction panel -->
+        <div class="interaction-area">
+            
+            <!-- Connection Status -->
+            <div class="status-bar">
+                <h1 class="brand-title">BlinkScript <span class="badge">Laptop Assistant</span></h1>
+                <div class="connection-status">
+                    <div class="status-dot"></div>
+                    <span id="conn-text">Blink Sensor Active</span>
+                </div>
+            </div>
+
+            <!-- Speech/Dialogue Screen -->
+            <div class="screen-display">
+                <span class="mode-indicator" id="mode-text">Mode: Home</span>
+                <p class="question-text" id="question-text">How can I help you today?</p>
+                
+                <!-- Typing Input Buffer -->
+                <div class="input-buffer-container" id="buffer-container">
+                    <p class="keyboard-meta" id="keyboard-meta">Buffer:</p>
+                    <p class="input-buffer-text" id="buffer-text"></p>
+                </div>
+
+                <!-- Word Suggestions row -->
+                <div class="suggestions-row" id="suggestions-row">
+                    <!-- Suggestions go here dynamically -->
+                </div>
+            </div>
+
+            <!-- Numbered Option Cards -->
+            <div class="options-grid" id="options-grid">
+                <!-- Option 1 -->
+                <div class="option-card" id="card-1" onclick="selectOption(1)">
+                    <div class="option-number">1</div>
+                    <div class="option-label" id="label-1">CHATBOT</div>
+                </div>
+                <!-- Option 2 -->
+                <div class="option-card" id="card-2" onclick="selectOption(2)">
+                    <div class="option-number">2</div>
+                    <div class="option-label" id="label-2">QUICK PHRASES</div>
+                </div>
+                <!-- Option 3 -->
+                <div class="option-card" id="card-3" onclick="selectOption(3)">
+                    <div class="option-number">3</div>
+                    <div class="option-label" id="label-3">BLINK TYPING</div>
+                </div>
+                <!-- Option 4 -->
+                <div class="option-card emergency-btn" id="card-4" onclick="selectOption(4)">
+                    <div class="option-number">4</div>
+                    <div class="option-label" id="label-4">EMERGENCY</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right sidebar: Conversation logs -->
+        <div class="sidebar-panel">
+            <h2 class="sidebar-title">
+                <span>Dialogue Logs</span>
+                <label class="voice-settings">
+                    <input type="checkbox" class="voice-checkbox" id="voice-toggle" checked>
+                    <span class="voice-label">Voice Feedback</span>
+                </label>
+            </h2>
+            <div class="dialogue-log" id="dialogue-log">
+                <!-- Log bubbles go here -->
+                <div class="log-bubble bot">
+                    <span class="log-sender bot">Assistant</span>
+                    Welcome to BlinkScript Assistant. Select an option below to begin.
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Blink Count Overlay -->
+        <div class="blink-hud">
+            <div class="hud-icon"></div>
+            <span id="hud-text">Waiting for blinks...</span>
+        </div>
+
+    </div>
+
+    <script>
+        // State data
+        const DICTIONARY = [
+            "hello", "help", "water", "food", "outside", "yes", "no", "hurt",
+            "pain", "doctor", "nurse", "washroom", "medicine", "comedy",
+            "movie", "music", "park", "walk", "cold", "warm", "normal",
+            "tv", "book", "good", "bad", "tired", "sleep", "thanks", "please"
+        ];
+
+        let state = {
+            screen: "HOME", // HOME, CHATBOT, PHRASES, KEYBOARD_ROOT, KEYBOARD_SUB, KEYBOARD_LETTERS, KEYBOARD_ACTIONS_OR_SUGGESTIONS, KEYBOARD_ACTIONS
+            previousScreen: "HOME",
+            chatbotNode: "ROOT", // ROOT, FEEL_GOOD, GO_OUTSIDE, WATCH_MOVIE, FEEL_BAD, PAIN_LOC, DAILY_NEEDS, WATER_TEMP
+            phrasesNode: "ROOT", // ROOT, DAILY, HEALTH, ENTERTAINMENT, WATER
+            typedText: "",
+            keyboardGroup: "", // A-I, J-R, S-Z
+            keyboardSubgroup: "", // ABC, DEF, GHI, etc.
+            activeSuggestions: [],
+            voiceEnabled: true
+        };
+
+        // UI elements
+        const modeText = document.getElementById("mode-text");
+        const questionText = document.getElementById("question-text");
+        const bufferContainer = document.getElementById("buffer-container");
+        const bufferText = document.getElementById("buffer-text");
+        const suggestionsRow = document.getElementById("suggestions-row");
+        const dialogueLog = document.getElementById("dialogue-log");
+        const hudText = document.getElementById("hud-text");
+        const voiceToggle = document.getElementById("voice-toggle");
+
+        // Cards and labels
+        const cards = [
+            document.getElementById("card-1"),
+            document.getElementById("card-2"),
+            document.getElementById("card-3"),
+            document.getElementById("card-4")
+        ];
+        const labels = [
+            document.getElementById("label-1"),
+            document.getElementById("label-2"),
+            document.getElementById("label-3"),
+            document.getElementById("label-4")
+        ];
+
+        // Setup speech toggle
+        voiceToggle.addEventListener("change", (e) => {
+            state.voiceEnabled = e.target.checked;
+        });
+
+        // Speech Helper
+        function speak(text) {
+            if (!window.speechSynthesis || !state.voiceEnabled) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.95;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Add message to sidebar log
+        function addLog(sender, text) {
+            const bubble = document.createElement("div");
+            bubble.className = "log-bubble " + sender.toLowerCase();
+            
+            const senderSpan = document.createElement("span");
+            senderSpan.className = "log-sender " + sender.toLowerCase();
+            senderSpan.innerText = sender;
+            
+            bubble.appendChild(senderSpan);
+            bubble.appendChild(document.createTextNode(text));
+            
+            dialogueLog.appendChild(bubble);
+            dialogueLog.scrollTop = dialogueLog.scrollHeight;
+        }
+
+        // Log events to backend Flask Database
+        function postLogToServer(sender, content, isSos = false) {
+            const url = isSos ? "/api/sos" : "/api/message";
+            const payload = isSos ? { "status": "PENDING" } : { "sender": sender, "content": content };
+
+            fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => console.log("Logged successfully:", data))
+            .catch(err => console.error("Error logging to database:", err));
+        }
+
+        // Trigger Critical Alert (SOS)
+        function triggerEmergency() {
+            speak("Emergency Alert");
+            addLog("SYSTEM", "EMERGENCY ALERT TRIGGERED");
+            postLogToServer("SYSTEM", "SOS TRIGGERED", true);
+            
+            // Temporary glow UI response
+            questionText.innerText = "Emergency Alert Sent!";
+            modeText.innerText = "MODE: EMERGENCY";
+            setTimeout(() => {
+                renderScreen();
+            }, 3000);
+        }
+
+        // Apply suggestions for typing
+        function updateSuggestions() {
+            const text = state.typedText.trim();
+            if (!text) {
+                state.activeSuggestions = [];
+                suggestionsRow.style.display = "none";
+                return;
+            }
+
+            const words = text.split(/\s+/);
+            const lastWord = words[words.length - 1].toLowerCase();
+
+            state.activeSuggestions = [];
+            if (lastWord.length > 0) {
+                for (let w of DICTIONARY) {
+                    if (w.startsWith(lastWord) && w !== lastWord) {
+                        state.activeSuggestions.push(w);
+                        if (state.activeSuggestions.length >= 3) break;
+                    }
+                }
+            }
+
+            if (state.activeSuggestions.length > 0) {
+                suggestionsRow.innerHTML = "";
+                state.activeSuggestions.forEach((s, idx) => {
+                    const el = document.createElement("div");
+                    el.className = "suggestion-item";
+                    el.innerText = `[${idx+1}] ${s}`;
+                    suggestionsRow.appendChild(el);
+                });
+                suggestionsRow.style.display = "flex";
+            } else {
+                suggestionsRow.style.display = "none";
+            }
+        }
+
+        function applySuggestion(index) {
+            if (index < 0 || index >= state.activeSuggestions.length) return;
+            const suggestion = state.activeSuggestions[index];
+            const currentText = state.typedText;
+            const lastSpace = currentText.lastIndexOf(" ");
+            
+            if (lastSpace === -1) {
+                state.typedText = suggestion + " ";
+            } else {
+                state.typedText = currentText.substring(0, lastSpace + 1) + suggestion + " ";
+            }
+            updateSuggestions();
+            bufferText.innerText = state.typedText;
+        }
+
+        // ==========================================
+        // SCREEN RENDERER & LOGIC ROUTER
+        // ==========================================
+        function renderScreen() {
+            // Hide buffer by default
+            bufferContainer.style.display = "none";
+            suggestionsRow.style.display = "none";
+            
+            // Clean deactivated options
+            cards.forEach(c => {
+                c.classList.remove("empty-option");
+            });
+
+            if (state.screen === "HOME") {
+                modeText.innerText = "Mode: Home";
+                questionText.innerText = "How can I help you today?";
+                
+                labels[0].innerText = "CHATBOT";
+                labels[1].innerText = "QUICK PHRASES";
+                labels[2].innerText = "BLINK TYPING";
+                labels[3].innerText = "EMERGENCY";
+                
+                speak("How can I help you today?");
+            }
+            
+            // CHATBOT FLOWS
+            else if (state.screen === "CHATBOT") {
+                modeText.innerText = "Mode: Chatbot";
+                
+                if (state.chatbotNode === "ROOT") {
+                    questionText.innerText = "Hello! How are you feeling today?";
+                    labels[0].innerText = "Good";
+                    labels[1].innerText = "Not Good";
+                    labels[2].innerText = "Something Else (Type)";
+                    labels[3].innerText = "Exit Chatbot";
+                    speak("Hello! How are you feeling today?");
+                }
+                else if (state.chatbotNode === "FEEL_GOOD") {
+                    questionText.innerText = "Great! Would you like to do something?";
+                    labels[0].innerText = "Go Outside";
+                    labels[1].innerText = "Watch Movie";
+                    labels[2].innerText = "Something Else (Type)";
+                    labels[3].innerText = "Back";
+                    speak("Great! Would you like to do something?");
+                }
+                else if (state.chatbotNode === "GO_OUTSIDE") {
+                    questionText.innerText = "Do you want to go to the park?";
+                    labels[0].innerText = "Yes (Go to Park)";
+                    labels[1].innerText = "No (Go for Walk)";
+                    labels[2].innerText = "Something Else (Type)";
+                    labels[3].innerText = "Back";
+                    speak("Do you want to go to the park?");
+                }
+                else if (state.chatbotNode === "WATCH_MOVIE") {
+                    questionText.innerText = "Would you like to watch a comedy?";
+                    labels[0].innerText = "Yes, comedy movie";
+                    labels[1].innerText = "No, action movie";
+                    labels[2].innerText = "Something Else (Type)";
+                    labels[3].innerText = "Back";
+                    speak("Would you like to watch a comedy?");
+                }
+                else if (state.chatbotNode === "FEEL_BAD") {
+                    questionText.innerText = "I'm sorry. Are you in pain?";
+                    labels[0].innerText = "Yes, I have pain";
+                    labels[1].innerText = "No, daily needs request";
+                    labels[2].innerText = "Something Else (Type)";
+                    labels[3].innerText = "Back";
+                    speak("I'm sorry. Are you in pain?");
+                }
+                else if (state.chatbotNode === "PAIN_LOC") {
+                    questionText.innerText = "Where is the pain?";
+                    labels[0].innerText = "Head";
+                    labels[1].innerText = "Chest";
+                    labels[2].innerText = "Stomach";
+                    labels[3].innerText = "Back / Go Back";
+                    speak("Where is the pain?");
+                }
+                else if (state.chatbotNode === "DAILY_NEEDS") {
+                    questionText.innerText = "What daily need do you request?";
+                    labels[0].innerText = "Water";
+                    labels[1].innerText = "Food";
+                    labels[2].innerText = "Something Else (Type)";
+                    labels[3].innerText = "Back";
+                    speak("What daily need do you request?");
+                }
+                else if (state.chatbotNode === "WATER_TEMP") {
+                    questionText.innerText = "Do you want cold water?";
+                    labels[0].innerText = "Yes (Cold water)";
+                    labels[1].innerText = "No (Normal water)";
+                    labels[2].innerText = "Something Else (Type)";
+                    labels[3].innerText = "Back";
+                    speak("Do you want cold water?");
+                }
+            }
+
+            // QUICK PHRASES FLOWS
+            else if (state.screen === "PHRASES") {
+                modeText.innerText = "Mode: Quick Phrases";
+                
+                if (state.phrasesNode === "ROOT") {
+                    questionText.innerText = "Select a category:";
+                    labels[0].innerText = "Daily Needs";
+                    labels[1].innerText = "Health Needs";
+                    labels[2].innerText = "Entertainment";
+                    labels[3].innerText = "Back to Home";
+                    speak("Select a category");
+                }
+                else if (state.phrasesNode === "DAILY") {
+                    questionText.innerText = "Daily Needs:";
+                    labels[0].innerText = "Water";
+                    labels[1].innerText = "Food";
+                    labels[2].innerText = "Washroom";
+                    labels[3].innerText = "Back";
+                    speak("Daily Needs");
+                }
+                else if (state.phrasesNode === "WATER") {
+                    questionText.innerText = "Which water?";
+                    labels[0].innerText = "Cold";
+                    labels[1].innerText = "Warm";
+                    labels[2].innerText = "Normal";
+                    labels[3].innerText = "Back";
+                    speak("Which water?");
+                }
+                else if (state.phrasesNode === "HEALTH") {
+                    questionText.innerText = "Health Needs:";
+                    labels[0].innerText = "Medicine";
+                    labels[1].innerText = "Doctor";
+                    labels[2].innerText = "Nurse";
+                    labels[3].innerText = "Back";
+                    speak("Health Needs");
+                }
+                else if (state.phrasesNode === "ENTERTAINMENT") {
+                    questionText.innerText = "Choose Entertainment:";
+                    labels[0].innerText = "Music";
+                    labels[1].innerText = "Watch TV";
+                    labels[2].innerText = "Read Book";
+                    labels[3].innerText = "Back";
+                    speak("Choose Entertainment");
+                }
+            }
+
+            // BLINK KEYBOARD TYPING FLOWS
+            else if (state.screen.startsWith("KEYBOARD")) {
+                modeText.innerText = "Mode: Blink Keyboard";
+                bufferContainer.style.display = "block";
+                bufferText.innerText = state.typedText || "(Type message)";
+                updateSuggestions();
+
+                if (state.screen === "KEYBOARD_ROOT") {
+                    questionText.innerText = "Select letter range:";
+                    labels[0].innerText = "A - I";
+                    labels[1].innerText = "J - R";
+                    labels[2].innerText = "S - Z";
+                    
+                    if (state.activeSuggestions.length > 0) {
+                        labels[3].innerText = "Suggestions / Actions";
+                    } else {
+                        labels[3].innerText = "Space / Clear / Speak";
+                    }
+                    speak("Select letter range");
+                }
+                else if (state.screen === "KEYBOARD_SUB") {
+                    questionText.innerText = "Select subgroup:";
+                    if (state.keyboardGroup === "A-I") {
+                        labels[0].innerText = "A B C";
+                        labels[1].innerText = "D E F";
+                        labels[2].innerText = "G H I";
+                    } else if (state.keyboardGroup === "J-R") {
+                        labels[0].innerText = "J K L";
+                        labels[1].innerText = "M N O";
+                        labels[2].innerText = "P Q R";
+                    } else if (state.keyboardGroup === "S-Z") {
+                        labels[0].innerText = "S T U";
+                        labels[1].innerText = "V W X";
+                        labels[2].innerText = "Y Z";
+                    }
+                    labels[3].innerText = "Back";
+                    speak("Select subgroup");
+                }
+                else if (state.screen === "KEYBOARD_LETTERS") {
+                    questionText.innerText = "Select letter:";
+                    const sub = state.keyboardSubgroup;
+                    if (sub === "ABC") {
+                        labels[0].innerText = "A";
+                        labels[1].innerText = "B";
+                        labels[2].innerText = "C";
+                    } else if (sub === "DEF") {
+                        labels[0].innerText = "D";
+                        labels[1].innerText = "E";
+                        labels[2].innerText = "F";
+                    } else if (sub === "GHI") {
+                        labels[0].innerText = "G";
+                        labels[1].innerText = "H";
+                        labels[2].innerText = "I";
+                    } else if (sub === "JKL") {
+                        labels[0].innerText = "J";
+                        labels[1].innerText = "K";
+                        labels[2].innerText = "L";
+                    } else if (sub === "MNO") {
+                        labels[0].innerText = "M";
+                        labels[1].innerText = "N";
+                        labels[2].innerText = "O";
+                    } else if (sub === "PQR") {
+                        labels[0].innerText = "P";
+                        labels[1].innerText = "Q";
+                        labels[2].innerText = "R";
+                    } else if (sub === "STU") {
+                        labels[0].innerText = "S";
+                        labels[1].innerText = "T";
+                        labels[2].innerText = "U";
+                    } else if (sub === "VWX") {
+                        labels[0].innerText = "V";
+                        labels[1].innerText = "W";
+                        labels[2].innerText = "X";
+                    } else if (sub === "YZ") {
+                        labels[0].innerText = "Y";
+                        labels[1].innerText = "Z";
+                        labels[2].innerText = "Clear All";
+                    }
+                    labels[3].innerText = "Back";
+                    speak("Select letter");
+                }
+                else if (state.screen === "KEYBOARD_ACTIONS_OR_SUGGESTIONS") {
+                    if (state.activeSuggestions.length > 0) {
+                        questionText.innerText = "Select suggestion:";
+                        labels[0].innerText = state.activeSuggestions[0] || "-";
+                        labels[1].innerText = state.activeSuggestions[1] || "-";
+                        labels[2].innerText = state.activeSuggestions[2] || "-";
+                        labels[3].innerText = "More Actions";
+                        
+                        // Disable cards with no suggestion
+                        if (!state.activeSuggestions[1]) cards[1].classList.add("empty-option");
+                        if (!state.activeSuggestions[2]) cards[2].classList.add("empty-option");
+                        
+                        speak("Select word suggestion");
+                    } else {
+                        // Skip directly to actions
+                        state.screen = "KEYBOARD_ACTIONS";
+                        renderScreen();
+                    }
+                }
+                else if (state.screen === "KEYBOARD_ACTIONS") {
+                    questionText.innerText = "Select keyboard action:";
+                    labels[0].innerText = "Space";
+                    labels[1].innerText = "Backspace";
+                    labels[2].innerText = "Speak & Send";
+                    labels[3].innerText = "Exit Keyboard";
+                    speak("Select keyboard action");
+                }
+            }
+        }
+
+        // ==========================================
+        // OPTION SELECTION LOGIC
+        // ==========================================
+        function selectOption(optionNum) {
+            // Flash selected card
+            const card = cards[optionNum - 1];
+            if (!card || card.classList.contains("empty-option")) return;
+
+            card.classList.add("activated");
+            setTimeout(() => card.classList.remove("activated"), 500);
+
+            const optLabel = labels[optionNum - 1].innerText;
+
+            // Route based on current screen
+            if (state.screen === "HOME") {
+                if (optionNum === 1) {
+                    state.screen = "CHATBOT";
+                    state.chatbotNode = "ROOT";
+                    addLog("Assistant", "Opening Chatbot...");
+                    renderScreen();
+                } else if (optionNum === 2) {
+                    state.screen = "PHRASES";
+                    state.phrasesNode = "ROOT";
+                    addLog("Assistant", "Opening Quick Phrases...");
+                    renderScreen();
+                } else if (optionNum === 3) {
+                    state.screen = "KEYBOARD_ROOT";
+                    state.typedText = "";
+                    addLog("Assistant", "Opening Blink Keyboard...");
+                    renderScreen();
+                } else if (optionNum === 4) {
+                    triggerEmergency();
+                }
+            }
+            
+            // CHATBOT SCREEN ACTIONS
+            else if (state.screen === "CHATBOT") {
+                const node = state.chatbotNode;
+                
+                if (node === "ROOT") {
+                    if (optionNum === 1) {
+                        addLog("USER", "Good");
+                        postLogToServer("USER", "Good");
+                        state.chatbotNode = "FEEL_GOOD";
+                        addLog("Assistant", "Great! Would you like to do something?");
+                        renderScreen();
+                    } else if (optionNum === 2) {
+                        addLog("USER", "Not Good");
+                        postLogToServer("USER", "Not Good");
+                        state.chatbotNode = "FEEL_BAD";
+                        addLog("Assistant", "I'm sorry. Are you in pain?");
+                        renderScreen();
+                    } else if (optionNum === 3) {
+                        state.previousScreen = "CHATBOT";
+                        state.screen = "KEYBOARD_ROOT";
+                        state.typedText = "";
+                        addLog("Assistant", "Opening Keyboard for custom response...");
+                        renderScreen();
+                    } else if (optionNum === 4) {
+                        state.screen = "HOME";
+                        addLog("Assistant", "Exited Chatbot.");
+                        renderScreen();
+                    }
+                }
+                
+                else if (node === "FEEL_GOOD") {
+                    if (optionNum === 1) {
+                        addLog("USER", "Go Outside");
+                        postLogToServer("USER", "Go Outside");
+                        state.chatbotNode = "GO_OUTSIDE";
+                        addLog("Assistant", "Do you want to go to the park?");
+                        renderScreen();
+                    } else if (optionNum === 2) {
+                        addLog("USER", "Watch Movie");
+                        postLogToServer("USER", "Watch Movie");
+                        state.chatbotNode = "WATCH_MOVIE";
+                        addLog("Assistant", "Would you like to watch a comedy?");
+                        renderScreen();
+                    } else if (optionNum === 3) {
+                        state.previousScreen = "CHATBOT";
+                        state.screen = "KEYBOARD_ROOT";
+                        state.typedText = "";
+                        renderScreen();
+                    } else if (optionNum === 4) {
+                        state.chatbotNode = "ROOT";
+                        renderScreen();
+                    }
+                }
+                
+                else if (node === "GO_OUTSIDE") {
+                    if (optionNum === 1) {
+                        addLog("USER", "Yes, go to park");
+                        postLogToServer("USER", "Yes, go to park");
+                        speak("Let's go to the park!");
+                        addLog("Assistant", "Request sent. I will ask caregiver to take you to the park.");
+                        state.screen = "HOME";
+                        renderScreen();
+                    } else if (optionNum === 2) {
+                        addLog("USER", "No, go for walk");
+                        postLogToServer("USER", "No, go for walk");
+                        speak("Let's go for a walk!");
+                        addLog("Assistant", "Request sent. Caregiver notified for a walk.");
+                        state.screen = "HOME";
+                        renderScreen();
+                    } else if (optionNum === 3) {
+                        state.previousScreen = "CHATBOT";
+                        state.screen = "KEYBOARD_ROOT";
+                        state.typedText = "";
+                        renderScreen();
+                    } else if (optionNum === 4) {
+                        state.chatbotNode = "FEEL_GOOD";
+                        renderScreen();
+                    }
+                }
+                
+                else if (node === "WATCH_MOVIE") {
+                    if (optionNum === 1) {
+                        addLog("USER", "Yes, comedy movie");
+                        postLogToServer("USER", "Yes, comedy movie");
+                        speak("Playing comedy movie");
+                        addLog("Assistant", "Let's play a comedy movie for you.");
+                        state.screen = "HOME";
+                        renderScreen();
+                    } else if (optionNum === 2) {
+                        addLog("USER", "No, action movie");
+                        postLogToServer("USER", "No, action movie");
+                        speak("Playing action movie");
+                        addLog("Assistant", "Let's play an action movie for you.");
+                        state.screen = "HOME";
+                        renderScreen();
+                    } else if (optionNum === 3) {
+                        state.previousScreen = "CHATBOT";
+                        state.screen = "KEYBOARD_ROOT";
+                        state.typedText = "";
+                        renderScreen();
+                    } else if (optionNum === 4) {
+                        state.chatbotNode = "FEEL_GOOD";
+                        renderScreen();
+                    }
+                }
+                
+                else if (node === "FEEL_BAD") {
+                    if (optionNum === 1) {
+                        addLog("USER", "Yes, in pain");
+                        postLogToServer("USER", "Yes, in pain");
+                        state.chatbotNode = "PAIN_LOC";
+                        addLog("Assistant", "Where is the pain?");
+                        renderScreen();
+                    } else if (optionNum === 2) {
+                        addLog("USER", "No pain, daily needs");
+                        postLogToServer("USER", "No pain, daily needs");
+                        state.chatbotNode = "DAILY_NEEDS";
+                        addLog("Assistant", "What daily need do you request?");
+                        renderScreen();
+                    } else if (optionNum === 3) {
+                        state.previousScreen = "CHATBOT";
+                        state.screen = "KEYBOARD_ROOT";
+                        state.typedText = "";
+                        renderScreen();
+                    } else if (optionNum === 4) {
+                        state.chatbotNode = "ROOT";
+                        renderScreen();
+                    }
+                }
+                
+                else if (node === "PAIN_LOC") {
+                    if (optionNum === 1) {
+                        addLog("USER", "Head pain");
+                        postLogToServer("USER", "Head pain");
+                        speak("Headache reported.");
+                        addLog("Assistant", "Caregiver has been alerted of your headache.");
+                        state.screen = "HOME";
+                        renderScreen();
+                    } else if (optionNum === 2) {
+                        addLog("USER", "Chest pain");
+                        postLogToServer("USER", "Chest pain");
+                        speak("Chest pain reported.");
+                        addLog("Assistant", "ALERT: Caregiver and doctor notified for chest pain.");
+                        postLogToServer("SYSTEM", "CHEST PAIN ALERT", true);
+                        state.screen = "HOME";
+                        renderScreen();
+                    } else if (optionNum === 3) {
+                        addLog("USER", "Stomach pain");
+                        postLogToServer("USER", "Stomach pain");
+                        speak("Stomach pain reported.");
+                        addLog("Assistant", "Caregiver alerted of stomach pain.");
+                        state.screen = "HOME";
+                        renderScreen();
+                    } else if (optionNum === 4) {
+                        state.chatbotNode = "FEEL_BAD";
+                        renderScreen();
+                    }
+                }
+                
+                else if (node === "DAILY_NEEDS") {
+                    if (optionNum === 1) {
+                        addLog("USER", "Water");
+                        postLogToServer("USER", "Water");
+                        state.chatbotNode = "WATER_TEMP";
+                        addLog("Assistant", "Do you want cold water?");
+                        renderScreen();
+                    } else if (optionNum === 2) {
+                        addLog("USER", "Food");
+                        postLogToServer("USER", "Food");
+                        speak("Food requested.");
+                        addLog("Assistant", "I will notify caregiver to bring you food.");
+                        state.screen = "HOME";
+                        renderScreen();
+                    } else if (optionNum === 3) {
+                        state.previousScreen = "CHATBOT";
+                        state.screen = "KEYBOARD_ROOT";
+                        state.typedText = "";
+                        renderScreen();
+                    } else if (optionNum === 4) {
+                        state.chatbotNode = "FEEL_BAD";
+                        renderScreen();
+                    }
+                }
+                
+                else if (node === "WATER_TEMP") {
+                    if (optionNum === 1) {
+                        addLog("USER", "Yes, cold water");
+                        postLogToServer("USER", "Yes, cold water");
+                        speak("Cold water requested.");
+                        addLog("Assistant", "I will request cold water for you immediately.");
+                        state.screen = "HOME";
+                        renderScreen();
+                    } else if (optionNum === 2) {
+                        addLog("USER", "No, normal water");
+                        postLogToServer("USER", "No, normal water");
+                        speak("Normal water requested.");
+                        addLog("Assistant", "I will notify caregiver to bring you normal water.");
+                        state.screen = "HOME";
+                        renderScreen();
+                    } else if (optionNum === 3) {
+                        state.previousScreen = "CHATBOT";
+                        state.screen = "KEYBOARD_ROOT";
+                        state.typedText = "";
+                        renderScreen();
+                    } else if (optionNum === 4) {
+                        state.chatbotNode = "DAILY_NEEDS";
+                        renderScreen();
+                    }
+                }
+            }
+
+            // PHRASES SCREEN ACTIONS
+            else if (state.screen === "PHRASES") {
+                const node = state.phrasesNode;
+
+                if (node === "ROOT") {
+                    if (optionNum === 1) {
+                        state.phrasesNode = "DAILY";
+                        renderScreen();
+                    } else if (optionNum === 2) {
+                        state.phrasesNode = "HEALTH";
+                        renderScreen();
+                    } else if (optionNum === 3) {
+                        state.phrasesNode = "ENTERTAINMENT";
+                        renderScreen();
+                    } else if (optionNum === 4) {
+                        state.screen = "HOME";
+                        renderScreen();
+                    }
+                }
+                
+                else if (node === "DAILY") {
+                    if (optionNum === 1) {
+                        state.phrasesNode = "WATER";
+                        renderScreen();
+                    } else if (optionNum === 2) {
+                        addLog("USER", "Requesting Food");
+                        postLogToServer("USER", "Requesting Food");
+                        speak("Requesting Food");
+                        state.screen = "HOME";
+                        renderScreen();
+                    } else if (optionNum === 3) {
+                        addLog("USER", "Requesting Washroom Assistance");
+                        postLogToServer("USER", "Requesting Washroom Assistance");
+                        speak("Assistance for washroom requested.");
+                        state.screen = "HOME";
+                        renderScreen();
+                    } else if (optionNum === 4) {
+                        state.phrasesNode = "ROOT";
+                        renderScreen();
+                    }
+                }
+
+                else if (node === "WATER") {
+                    if (optionNum === 1) {
+                        addLog("USER", "Cold Water Requested");
+                        postLogToServer("USER", "Cold Water Requested");
+                        speak("Cold water requested");
+                    } else if (optionNum === 2) {
+                        addLog("USER", "Warm Water Requested");
+                        postLogToServer("USER", "Warm Water Requested");
+                        speak("Warm water requested");
+                    } else if (optionNum === 3) {
+                        addLog("USER", "Normal Water Requested");
+                        postLogToServer("USER", "Normal Water Requested");
+                        speak("Normal water requested");
+                    }
+                    state.screen = "HOME";
+                    renderScreen();
+                }
+
+                else if (node === "HEALTH") {
+                    if (optionNum === 1) {
+                        addLog("USER", "Medicine Requested");
+                        postLogToServer("USER", "Medicine Requested");
+                        speak("Medicine requested");
+                    } else if (optionNum === 2) {
+                        addLog("USER", "Calling Doctor");
+                        postLogToServer("USER", "Calling Doctor");
+                        speak("Notifying doctor");
+                    } else if (optionNum === 3) {
+                        addLog("USER", "Calling Nurse");
+                        postLogToServer("USER", "Calling Nurse");
+                        speak("Notifying nurse");
+                    }
+                    state.screen = "HOME";
+                    renderScreen();
+                }
+
+                else if (node === "ENTERTAINMENT") {
+                    if (optionNum === 1) {
+                        addLog("USER", "Play Music");
+                        postLogToServer("USER", "Play Music");
+                        speak("Playing music");
+                    } else if (optionNum === 2) {
+                        addLog("USER", "Watch TV");
+                        postLogToServer("USER", "Watch TV");
+                        speak("Turning on TV");
+                    } else if (optionNum === 3) {
+                        addLog("USER", "Read Book");
+                        postLogToServer("USER", "Read Book");
+                        speak("Read book request");
+                    }
+                    state.screen = "HOME";
+                    renderScreen();
+                }
+            }
+
+            // BLINK KEYBOARD ACTIONS
+            else if (state.screen.startsWith("KEYBOARD")) {
+                if (state.screen === "KEYBOARD_ROOT") {
+                    if (optionNum === 1) {
+                        state.screen = "KEYBOARD_SUB";
+                        state.keyboardGroup = "A-I";
+                        renderScreen();
+                    } else if (optionNum === 2) {
+                        state.screen = "KEYBOARD_SUB";
+                        state.keyboardGroup = "J-R";
+                        renderScreen();
+                    } else if (optionNum === 3) {
+                        state.screen = "KEYBOARD_SUB";
+                        state.keyboardGroup = "S-Z";
+                        renderScreen();
+                    } else if (optionNum === 4) {
+                        state.screen = "KEYBOARD_ACTIONS_OR_SUGGESTIONS";
+                        renderScreen();
+                    }
+                }
+                
+                else if (state.screen === "KEYBOARD_SUB") {
+                    if (optionNum === 4) {
+                        state.screen = "KEYBOARD_ROOT";
+                        renderScreen();
+                    } else {
+                        state.screen = "KEYBOARD_LETTERS";
+                        if (state.keyboardGroup === "A-I") {
+                            state.keyboardSubgroup = optionNum === 1 ? "ABC" : (optionNum === 2 ? "DEF" : "GHI");
+                        } else if (state.keyboardGroup === "J-R") {
+                            state.keyboardSubgroup = optionNum === 1 ? "JKL" : (optionNum === 2 ? "MNO" : "PQR");
+                        } else if (state.keyboardGroup === "S-Z") {
+                            state.keyboardSubgroup = optionNum === 1 ? "STU" : (optionNum === 2 ? "VWX" : "YZ");
+                        }
+                        renderScreen();
+                    }
+                }
+                
+                else if (state.screen === "KEYBOARD_LETTERS") {
+                    if (optionNum === 4) {
+                        state.screen = "KEYBOARD_SUB";
+                        renderScreen();
+                    } else {
+                        const sub = state.keyboardSubgroup;
+                        let letter = "";
+                        
+                        if (sub === "ABC") letter = optionNum === 1 ? "a" : (optionNum === 2 ? "b" : "c");
+                        else if (sub === "DEF") letter = optionNum === 1 ? "d" : (optionNum === 2 ? "e" : "f");
+                        else if (sub === "GHI") letter = optionNum === 1 ? "g" : (optionNum === 2 ? "h" : "i");
+                        else if (sub === "JKL") letter = optionNum === 1 ? "j" : (optionNum === 2 ? "k" : "l");
+                        else if (sub === "MNO") letter = optionNum === 1 ? "m" : (optionNum === 2 ? "n" : "o");
+                        else if (sub === "PQR") letter = optionNum === 1 ? "p" : (optionNum === 2 ? "q" : "r");
+                        else if (sub === "STU") letter = optionNum === 1 ? "s" : (optionNum === 2 ? "t" : "u");
+                        else if (sub === "VWX") letter = optionNum === 1 ? "v" : (optionNum === 2 ? "w" : "x");
+                        else if (sub === "YZ") {
+                            if (optionNum === 1) letter = "y";
+                            else if (optionNum === 2) letter = "z";
+                            else if (optionNum === 3) {
+                                state.typedText = "";
+                                state.screen = "KEYBOARD_ROOT";
+                                renderScreen();
+                                return;
+                            }
+                        }
+                        
+                        if (letter) {
+                            state.typedText += letter;
+                        }
+                        state.screen = "KEYBOARD_ROOT";
+                        renderScreen();
+                    }
+                }
+                
+                else if (state.screen === "KEYBOARD_ACTIONS_OR_SUGGESTIONS") {
+                    if (optionNum === 4) {
+                        state.screen = "KEYBOARD_ACTIONS";
+                        renderScreen();
+                    } else {
+                        applySuggestion(optionNum - 1);
+                        state.screen = "KEYBOARD_ROOT";
+                        renderScreen();
+                    }
+                }
+                
+                else if (state.screen === "KEYBOARD_ACTIONS") {
+                    if (optionNum === 1) {
+                        state.typedText += " ";
+                        state.screen = "KEYBOARD_ROOT";
+                        renderScreen();
+                    } else if (optionNum === 2) {
+                        if (state.typedText.length > 0) {
+                            state.typedText = state.typedText.slice(0, -1);
+                        }
+                        state.screen = "KEYBOARD_ROOT";
+                        renderScreen();
+                    } else if (optionNum === 3) {
+                        // Speak & Send Custom Message
+                        const msg = state.typedText.trim();
+                        if (msg) {
+                            speak(msg);
+                            addLog("USER", msg);
+                            postLogToServer("USER", msg);
+                            
+                            // If we came from chatbot, go back to chatbot feeling question
+                            if (state.previousScreen === "CHATBOT") {
+                                state.screen = "CHATBOT";
+                                const reply = "Got it! Notifying caregiver about: " + msg;
+                                addLog("Assistant", reply);
+                                setTimeout(() => speak(reply), 1000);
+                                state.chatbotNode = "ROOT"; // Reset chatbot node after custom answer
+                            } else {
+                                state.screen = "HOME";
+                            }
+                            state.typedText = "";
+                            renderScreen();
+                        } else {
+                            state.screen = "HOME";
+                            renderScreen();
+                        }
+                    } else if (optionNum === 4) {
+                        if (state.previousScreen === "CHATBOT") {
+                            state.screen = "CHATBOT";
+                        } else {
+                            state.screen = "HOME";
+                        }
+                        renderScreen();
+                    }
+                }
+            }
+        }
+
+        // ==========================================
+        // REAL-TIME BLINK SENSOR INTEGRATION
+        // ==========================================
+        let lastBlinkId = 0;
+        
+        function pollBlinkEvents() {
+            fetch('/api/latest-blink')
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.id > lastBlinkId) {
+                        lastBlinkId = data.id;
+                        const blinkCount = data.count;
+                        console.log(`[POLL] Detected blink count: ${blinkCount}`);
+                        
+                        hudText.innerText = `Blinked: ${blinkCount} times`;
+                        setTimeout(() => {
+                            hudText.innerText = "Waiting for blinks...";
+                        }, 2000);
+
+                        // Map counts to options
+                        if (blinkCount >= 1 && blinkCount <= 4) {
+                            selectOption(blinkCount);
+                        } else if (blinkCount === 5) {
+                            // Shortcut for emergency or back depending on mode
+                            if (state.screen === "HOME") {
+                                // Trigger option 4 (Emergency)
+                                selectOption(4);
+                            } else {
+                                // Default go back / exit by clicking 4
+                                selectOption(4);
+                            }
+                        } else if (blinkCount > 5) {
+                            // Immediate SOS alert
+                            triggerEmergency();
+                        }
+                    }
+                })
+                .catch(err => {
+                    document.getElementById("conn-text").innerText = "Sensor Error";
+                    document.getElementById("conn-text").style.color = "var(--red)";
+                    console.error("Polling error:", err);
+                });
+        }
+
+        // Start polling every 200ms
+        setInterval(pollBlinkEvents, 200);
+
+        // Initial Speak Welcome
+        setTimeout(() => {
+            speak("Welcome to BlinkScript Assistant.");
+        }, 800);
+
+        // Run initial screen render
+        renderScreen();
+    </script>
+</body>
+</html>

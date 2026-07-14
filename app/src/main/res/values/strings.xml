@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">BlinkScriptApp</string>
+    <string name="emergency_contact_name">Caregiver</string>
+    <string name="emergency_contact_number">+91 98765 43210</string>
+    <string name="emergency_voice_message">Emergency! Emergency! I need help immediately. Please call my emergency contact now.</string>
+</resources>
