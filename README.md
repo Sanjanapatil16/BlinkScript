@@ -53,7 +53,21 @@ BlinkScript is an assistive communication system that converts eye blinks into t
 \- `templates/` - HTML templates
 
 
+## Application Screenshots
 
+### Home Screen
+![Home Screen](image/home.png)
+
+### Blink Detection
+![Blink Detection](image/blink-detection.png)
+
+### Quick Phrases
+![Quick Phrases](image/Blibk-Conversion.jpeg)
+
+### Emergency SOS
+![Emergency SOS](image/SOS-Feature.png)
+
+## Future Improvements
 \## Future Improvements
 
 
